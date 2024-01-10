@@ -12,18 +12,24 @@ def evaluate_fitness(route, problem):
     total_distance = 0
     # Compute the total distance
     for i in range(len(route) - 1):
-        total_distance += problem.get_weight(route[i], route[i + 1])
+        total_distance += tsplib95.distances.euclidean(problem.get_display(route[i]), problem.get_display(route[i + 1]))
+        
 
     return total_distance
+
 
 
 # Perform crossover to create offspring
 def crossover(parent1, parent2):
     crossover_point = random.randint(1, len(parent1) - 1)
-    child1 = parent1[:crossover_point] + [x for x in parent2 if x not in parent1[:crossover_point]]
-    child2 = parent2[:crossover_point] + [x for x in parent1 if x not in parent2[:crossover_point]]
-
-
+    
+    child1 = parent1[:crossover_point] + [city for city in parent2 if city not in parent1[:crossover_point]]
+    child2 = parent2[:crossover_point] + [city for city in parent1 if city not in parent2[:crossover_point]]
+    
+    # Ensure the route is cyclic
+    child1.append(child1[0])
+    child2.append(child2[0])
+    
     return child1, child2
 
 # Perform mutation on a chromosome
@@ -104,8 +110,8 @@ def genetic_algorithm(problem_file, population_size, generations, crossover_rate
 
 # Example usage
 problem_file = "Problems/att48.tsp"
-population_size = 100
-generations = 500
+population_size = 400
+generations = 800
 crossover_rate = 0.5
 mutation_rate = 0.5
 tournament_size = 5
