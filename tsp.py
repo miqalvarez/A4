@@ -1,0 +1,116 @@
+import random
+import tsplib95
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Generate an initial population
+def generate_population(size, num_nodes):
+    return [random.sample(range(1, num_nodes + 1), num_nodes) for _ in range(size)]
+
+# Evaluate the fitness of a chromosome (route)
+def evaluate_fitness(route, problem):
+    total_distance = 0
+    # Compute the total distance
+    for i in range(len(route) - 1):
+        total_distance += problem.get_weight(route[i], route[i + 1])
+
+    return total_distance
+
+
+# Perform crossover to create offspring
+def crossover(parent1, parent2):
+    crossover_point = random.randint(1, len(parent1) - 1)
+    child1 = parent1[:crossover_point] + [x for x in parent2 if x not in parent1[:crossover_point]]
+    child2 = parent2[:crossover_point] + [x for x in parent1 if x not in parent2[:crossover_point]]
+
+
+    return child1, child2
+
+# Perform mutation on a chromosome
+def mutate(route):
+    mutation_point1 = random.randint(0, len(route) - 1)
+    mutation_point2 = random.randint(0, len(route) - 1)
+    route[mutation_point1], route[mutation_point2] = route[mutation_point2], route[mutation_point1]
+    return route
+
+# Select individuals for the next generation using tournament selection
+def tournament_selection(population, fitness_values, tournament_size):
+    selected_indices = random.sample(range(len(population)), tournament_size)
+    selected_individuals = [population[i] for i in selected_indices]
+    selected_fitness_values = [fitness_values[i] for i in selected_indices]
+    return selected_individuals[selected_fitness_values.index(min(selected_fitness_values))]
+
+# Genetic Algorithm
+def genetic_algorithm(problem_file, population_size, generations, crossover_rate, mutation_rate, tournament_size):
+    tsp_instance = tsplib95.load(problem_file)
+    num_nodes = tsp_instance.dimension
+
+    # Initialize population
+    population = generate_population(population_size, num_nodes)
+
+    fitness_history = []
+    for generation in range(generations):
+        # Evaluate fitness of the population
+        fitness_values = [evaluate_fitness(chromosome, tsp_instance) for chromosome in population]
+
+        # Select parents for crossover using tournament selection
+        parents = [tournament_selection(population, fitness_values, tournament_size) for _ in range(population_size)]
+
+        # Create offspring through crossover
+        offspring = []
+        for i in range(0, population_size, 2):
+            if random.random() < crossover_rate:
+                child1, child2 = crossover(parents[i], parents[i + 1])
+            else:
+                child1, child2 = parents[i], parents[i + 1]
+            offspring.extend([child1, child2])
+
+        # Mutate offspring
+        for i in range(len(offspring)):
+            if random.random() < mutation_rate:
+                offspring[i] = mutate(offspring[i])
+
+        # Replace the old population with the new population
+        population = offspring
+
+        # Print the best route in each generation
+        best_route = population[np.argmin(fitness_values)]
+        best_fitness = min(fitness_values)
+        fitness_history.append(best_fitness)
+        print(f"Generation {generation + 1}: Best Route = {best_route}, Best Fitness = {best_fitness}")
+
+    # Return the best route found
+    best_route = population[np.argmin(fitness_values)]
+
+    # Plot the best route using get_display along with the fitness history
+    plt.figure(figsize=(10, 5))
+    plt.subplot(1, 2, 1)
+    plt.plot(fitness_history)
+    plt.title("Fitness History")
+    plt.xlabel("Generation")
+    plt.ylabel("Fitness")
+    x = [tsp_instance.get_display(x)[0] for x in best_route]
+    y = [tsp_instance.get_display(x)[1] for x in best_route]
+    plt.subplot(1, 2, 2)
+        # Mark with the number of the city each point
+    for i in range(len(x)):
+        plt.text(x[i], y[i], str(i + 1))
+    plt.plot(x, y, 'r-')
+    plt.title(f"Best Route")
+
+    plt.show()
+
+    return best_route, min(fitness_values)
+
+# Example usage
+problem_file = "Problems/att48.tsp"
+population_size = 100
+generations = 500
+crossover_rate = 0.5
+mutation_rate = 0.5
+tournament_size = 5
+
+best_route, best_fitness = genetic_algorithm(problem_file, population_size, generations, crossover_rate, mutation_rate, tournament_size)
+
+print(f"Best Route: {best_route}")
+print(f"Best Fitness: {best_fitness}")
