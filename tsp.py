@@ -109,7 +109,7 @@ def genetic_algorithm(problem_file, population_size, generations, crossover_rate
     return best_route, min(fitness_values)
 
 # Example usage
-problem_file = "Problems/att48.tsp"
+problem_file = "Problems/bayg29.tsp"
 population_size = 400
 generations = 800
 crossover_rate = 0.5

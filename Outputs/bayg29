@@ -1,0 +1,9 @@
+population_size = 400
+generations = 800
+crossover_rate = 0.5
+mutation_rate = 0.5
+tournament_size = 5
+
+Generation 800:
+    Best Route: [24, 1, 6, 12, 28, 8, 27, 16, 23, 7, 25, 19, 15, 14, 22, 17, 11, 18, 4, 10, 20, 2, 29, 3, 26, 9, 5, 21, 13, 24]
+    Best Fitness: 9590
