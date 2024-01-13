@@ -19,12 +19,18 @@ def evaluate_fitness(route, problem):
 
 
 
-# Perform crossover to create offspring
-def crossover(parent1, parent2):
+# Perform crossover on two parents based on the specified method
+def crossover(parent1, parent2, method):
     crossover_point = random.randint(1, len(parent1) - 1)
     
-    child1 = parent1[:crossover_point] + [city for city in parent2 if city not in parent1[:crossover_point]]
-    child2 = parent2[:crossover_point] + [city for city in parent1 if city not in parent2[:crossover_point]]
+    if method == 1:
+        child1 = parent1[:crossover_point] + [city for city in parent2 if city not in parent1[:crossover_point]]
+        child2 = parent2[:crossover_point] + [city for city in parent1 if city not in parent2[:crossover_point]]
+    else:
+        # Alternative crossover method
+        crossover_point = len(parent1) // 2
+        child1 = parent1[:crossover_point] + [city for city in parent2 if city not in parent1[:crossover_point]]
+        child2 = parent2[:crossover_point] + [city for city in parent1 if city not in parent2[:crossover_point]]
     
     # Ensure the route is cyclic
     child1.append(child1[0])
@@ -32,22 +38,34 @@ def crossover(parent1, parent2):
     
     return child1, child2
 
-# Perform mutation on a chromosome
-def mutate(route):
+# Perform mutation on a chromosome based on the specified method
+def mutate(route, method):
     mutation_point1 = random.randint(0, len(route) - 1)
     mutation_point2 = random.randint(0, len(route) - 1)
-    route[mutation_point1], route[mutation_point2] = route[mutation_point2], route[mutation_point1]
+    
+    if method == 1:
+        route[mutation_point1], route[mutation_point2] = route[mutation_point2], route[mutation_point1]
+    else:
+        # Alternative mutation method
+        route[mutation_point1], route[mutation_point2] = route[mutation_point2], route[mutation_point1]
+        route = route[::-1]  # Reverse the route
+    
     return route
 
-# Select individuals for the next generation using tournament selection
-def tournament_selection(population, fitness_values, tournament_size):
-    selected_indices = random.sample(range(len(population)), tournament_size)
-    selected_individuals = [population[i] for i in selected_indices]
-    selected_fitness_values = [fitness_values[i] for i in selected_indices]
-    return selected_individuals[selected_fitness_values.index(min(selected_fitness_values))]
-
+# Select individuals for the next generation using the specified selection method
+def selection(population, fitness_values, tournament_size, method):
+    if method == 1:
+        selected_indices = random.sample(range(len(population)), tournament_size)
+        selected_individuals = [population[i] for i in selected_indices]
+        selected_fitness_values = [fitness_values[i] for i in selected_indices]
+        return selected_individuals[selected_fitness_values.index(min(selected_fitness_values))]
+    else:
+        # Alternative selection method
+        sorted_indices = sorted(range(len(fitness_values)), key=lambda k: fitness_values[k])
+        return population[sorted_indices[0]]
+    
 # Genetic Algorithm
-def genetic_algorithm(problem_file, population_size, generations, crossover_rate, mutation_rate, tournament_size):
+def genetic_algorithm(problem_file, population_size, generations, crossover_rate, mutation_rate, tournament_size, s_method, c_method, m_method):
     tsp_instance = tsplib95.load(problem_file)
     num_nodes = tsp_instance.dimension
 
@@ -60,13 +78,13 @@ def genetic_algorithm(problem_file, population_size, generations, crossover_rate
         fitness_values = [evaluate_fitness(chromosome, tsp_instance) for chromosome in population]
 
         # Select parents for crossover using tournament selection
-        parents = [tournament_selection(population, fitness_values, tournament_size) for _ in range(population_size)]
+        parents = [selection(population, fitness_values, tournament_size, s_method) for _ in range(population_size)]
 
         # Create offspring through crossover
         offspring = []
         for i in range(0, population_size, 2):
             if random.random() < crossover_rate:
-                child1, child2 = crossover(parents[i], parents[i + 1])
+                child1, child2 = crossover(parents[i], parents[i + 1], c_method)
             else:
                 child1, child2 = parents[i], parents[i + 1]
             offspring.extend([child1, child2])
@@ -74,7 +92,7 @@ def genetic_algorithm(problem_file, population_size, generations, crossover_rate
         # Mutate offspring
         for i in range(len(offspring)):
             if random.random() < mutation_rate:
-                offspring[i] = mutate(offspring[i])
+                offspring[i] = mutate(offspring[i], m_method)
 
         # Replace the old population with the new population
         population = offspring
@@ -109,14 +127,26 @@ def genetic_algorithm(problem_file, population_size, generations, crossover_rate
     return best_route, min(fitness_values)
 
 # Example usage
-problem_file = "Problems/bayg29.tsp"
+problem_file = "Problems/att48.tsp"
 population_size = 400
 generations = 800
 crossover_rate = 0.5
 mutation_rate = 0.5
 tournament_size = 5
 
-best_route, best_fitness = genetic_algorithm(problem_file, population_size, generations, crossover_rate, mutation_rate, tournament_size)
+# 1: PMX, 2: Alternative crossover
+c_method = 2
+
+# 1: Swap, 2: Alternative mutation
+m_method = 2
+
+# 1: Tournament selection, 2: Alternative selection
+s_method = 2
+
+
+
+
+best_route, best_fitness = genetic_algorithm(problem_file, population_size, generations, crossover_rate, mutation_rate, tournament_size, s_method, c_method, m_method)
 
 print(f"Best Route: {best_route}")
 print(f"Best Fitness: {best_fitness}")
