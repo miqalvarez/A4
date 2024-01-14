@@ -26,18 +26,32 @@ def crossover(parent1, parent2, method):
     if method == 1:
         child1 = parent1[:crossover_point] + [city for city in parent2 if city not in parent1[:crossover_point]]
         child2 = parent2[:crossover_point] + [city for city in parent1 if city not in parent2[:crossover_point]]
-    else:
-        # Alternative crossover method
-        crossover_point = len(parent1) // 2
-        child1 = parent1[:crossover_point] + [city for city in parent2 if city not in parent1[:crossover_point]]
-        child2 = parent2[:crossover_point] + [city for city in parent1 if city not in parent2[:crossover_point]]
+        
+        # Ensure the route is cyclic
+        child1.append(child1[0])
+        child2.append(child2[0])
     
-    # Ensure the route is cyclic
-    child1.append(child1[0])
-    child2.append(child2[0])
-    
-    return child1, child2
+    elif method == 2:
+        # Two-point crossover
+        crossover_point2 = random.randint(1, len(parent1) - 1)
+        while crossover_point == crossover_point2:
+            crossover_point2 = random.randint(1, len(parent1) - 1)
 
+        if crossover_point > crossover_point2:
+            crossover_point, crossover_point2 = crossover_point2, crossover_point
+
+        child1 = parent1[:crossover_point] + parent2[crossover_point:crossover_point2] + parent1[crossover_point2:]
+        child2 = parent2[:crossover_point] + parent1[crossover_point:crossover_point2] + parent2[crossover_point2:]
+
+        # Ensure unique cities
+        child1 = list(dict.fromkeys(child1))
+        child2 = list(dict.fromkeys(child2))
+        
+        # Ensure the route is cyclic
+        child1.append(child1[0])
+        child2.append(child2[0])
+
+    return child1, child2
 # Perform mutation on a chromosome based on the specified method
 def mutate(route, method):
     mutation_point1 = random.randint(0, len(route) - 1)
@@ -60,7 +74,6 @@ def selection(population, fitness_values, tournament_size, method):
         selected_fitness_values = [fitness_values[i] for i in selected_indices]
         return selected_individuals[selected_fitness_values.index(min(selected_fitness_values))]
     else:
-        # Alternative selection method
         sorted_indices = sorted(range(len(fitness_values)), key=lambda k: fitness_values[k])
         return population[sorted_indices[0]]
     
@@ -134,17 +147,14 @@ crossover_rate = 0.5
 mutation_rate = 0.5
 tournament_size = 5
 
-# 1: PMX, 2: Alternative crossover
-c_method = 2
+# PMX, 2PCX
+c_method = 1
 
-# 1: Swap, 2: Alternative mutation
-m_method = 2
+# Swap, Inverse
+m_method = 1
 
-# 1: Tournament selection, 2: Alternative selection
-s_method = 2
-
-
-
+# Tournament selection, elitism
+s_method = 1
 
 best_route, best_fitness = genetic_algorithm(problem_file, population_size, generations, crossover_rate, mutation_rate, tournament_size, s_method, c_method, m_method)
 
